@@ -12,6 +12,8 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
+
 
 
 mongoose.connect(process.env.MONGO_URI, {

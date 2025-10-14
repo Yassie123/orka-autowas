@@ -1,41 +1,79 @@
 import express from 'express';
 import User from '../models/user.js';
+import Car from '../models/car.js';
 
 const router = express.Router();
 
 
-// ✅ GET: Retrieve all users
+// ✅ Login / find or create user
+router.post('/login', async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ message: 'Username required' });
+
+    let user = await User.findOne({ username }).populate('cars');
+
+    if (!user) {
+      // Default autos bij eerste aanmaak
+      const defaultCars = [
+        { brand: 'Tesla', model: 'Model 3', licensePlate: '123-XYZ' },
+        { brand: 'BMW', model: 'X5', licensePlate: '456-ABC' }
+      ];
+
+      const carIds = [];
+      for (let carData of defaultCars) {
+        let car = await Car.findOne({ licensePlate: carData.licensePlate });
+        if (!car) car = await Car.create(carData);
+        carIds.push(car._id);
+      }
+
+      user = new User({ username, cars: carIds });
+      await user.save();
+      user = await user.populate('cars');
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error logging in', error });
+  }
+});
+
+// ✅ Voeg nieuwe auto toe aan bestaande user
+router.post('/:id/cars', async (req, res) => {
+  try {
+    const { brand, model, licensePlate } = req.body;
+    if (!brand || !model || !licensePlate)
+      return res.status(400).json({ message: 'All fields required' });
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    let car = await Car.findOne({ licensePlate });
+    if (!car) car = await Car.create({ brand, model, licensePlate });
+
+    if (!user.cars.includes(car._id)) {
+      user.cars.push(car._id);
+      await user.save();
+    }
+
+    res.json(car);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error adding car', error });
+  }
+});
+
+// ✅ GET all users
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().populate('cars');
     res.json(users);
   } catch (error) {
-    res.status(500).json({ user: 'Error retrieving users', error });
+    res.status(500).json({ message: 'Error fetching users', error });
   }
 });
-// ✅ GET: Retrieve a specific user by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (user) {
-      res.json(user);
-    } else {
-      res.status(404).json({ user: 'User not found' });
-    }
-  } catch (error) {
-    res.status(400).json({ user: 'Invalid user ID', error: error.user });
-  }
-});
-// ✅ POST: Add a new user
-router.post('/', async (req, res) => {
-  try {
-    const newUser = new User(req.body);
-    const savedUser = await newUser.save();
-    res.status(201).json(savedUser);
-  } catch (error) {
-    res.status(400).json({ user: 'Error adding user', error });
-  }
-});
+
 
 // ✅ PUT: Update an existing user
 router.put('/:id', async (req, res) => {
