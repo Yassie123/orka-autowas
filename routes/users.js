@@ -15,13 +15,10 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
 
-    const newUser = new User({ username, email, password, cars: [] });
+    const newUser = new User({ username, email, password });
     await newUser.save();
 
-    // Populate cars (empty array for new user)
-    const populatedUser = await newUser.populate('cars');
-
-    res.status(201).json({ userId: populatedUser._id, user: populatedUser, message: 'User registered successfully' });
+    res.status(201).json({ userId: newUser._id, user: newUser, message: 'User registered successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error registering user', error: err });
@@ -34,10 +31,9 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
 
-    let user = await User.findOne({ email }).populate('cars');
+    const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Optional: compare password if hashed
     if (user.password !== password) return res.status(401).json({ message: 'Incorrect password' });
 
     res.json({ userId: user._id, user });
@@ -47,20 +43,20 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ✅ GET all users (with cars)
+// ✅ GET all users
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find().populate('cars');
+    const users = await User.find();
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching users', error: err });
   }
 });
 
-// ✅ GET user by ID (with cars)
+// ✅ GET user by ID
 router.get('/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).populate('cars');
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
@@ -71,7 +67,7 @@ router.get('/:id', async (req, res) => {
 // ✅ UPDATE user
 router.put('/:id', async (req, res) => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).populate('cars');
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!updatedUser) return res.status(404).json({ message: 'User not found' });
     res.json(updatedUser);
   } catch (err) {
