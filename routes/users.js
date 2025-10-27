@@ -87,34 +87,39 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: 'Error deleting user', error: err });
   }
 });
-// users.js
 router.post('/:id/cars', async (req, res) => {
   try {
     const { id } = req.params;
     const { brand, model, licensePlate, color } = req.body;
 
+    console.log('🔧 User ID:', id);
+    console.log('🔧 Car data received:', { brand, model, licensePlate, color });
+
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // ✅ Add the user field!
+    console.log('✅ User found:', user.username);
+
     const newCar = new Car({ 
       brand, 
       model, 
       licensePlate, 
       color,
-      user: id  // <-- This was missing!
+      user: id
     });
+
+    console.log('🚗 Car object before save:', newCar);
+    
     await newCar.save();
+    console.log('✅ Car saved successfully');
 
     user.cars.push(newCar._id);
     await user.save();
+    console.log('✅ User updated with car');
 
     res.status(201).json(newCar);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error adding car', error: err });
+    console.error('❌ ERROR:', err); // ← Important!
+    res.status(500).json({ message: 'Error adding car', error: err.message || err }); // ← Send error message
   }
 });
-
-
-export default router;
