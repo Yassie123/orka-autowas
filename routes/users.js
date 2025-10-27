@@ -1,109 +1,92 @@
 import express from 'express';
 import User from '../models/user.js';
-import Car from '../models/car.js';
 
 const router = express.Router();
 
+// ✅ REGISTER: Create a new user
+router.post('/register', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'All fields required' });
+    }
 
-// ✅ Login / find or create user
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: 'User already exists' });
+
+    const newUser = new User({ username, email, password, cars: [] });
+    await newUser.save();
+
+    // Populate cars (empty array for new user)
+    const populatedUser = await newUser.populate('cars');
+
+    res.status(201).json({ userId: populatedUser._id, user: populatedUser, message: 'User registered successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error registering user', error: err });
+  }
+});
+
+// ✅ LOGIN
 router.post('/login', async (req, res) => {
   try {
-    const { username } = req.body;
-    if (!username) return res.status(400).json({ message: 'Username required' });
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
 
-    let user = await User.findOne({ username }).populate('cars');
-
-    if (!user) {
-      // Default autos bij eerste aanmaak
-      const defaultCars = [
-        { brand: 'Tesla', model: 'Model 3', licensePlate: '123-XYZ' },
-        { brand: 'BMW', model: 'X5', licensePlate: '456-ABC' }
-      ];
-
-      const carIds = [];
-      for (let carData of defaultCars) {
-        let car = await Car.findOne({ licensePlate: carData.licensePlate });
-        if (!car) car = await Car.create(carData);
-        carIds.push(car._id);
-      }
-
-      user = new User({ username, cars: carIds });
-      await user.save();
-      user = await user.populate('cars');
-    }
-
-    res.json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error logging in', error });
-  }
-});
-
-// ✅ Voeg nieuwe auto toe aan bestaande user
-router.post('/:id/cars', async (req, res) => {
-  try {
-    const { brand, model, licensePlate } = req.body;
-    if (!brand || !model || !licensePlate)
-      return res.status(400).json({ message: 'All fields required' });
-
-    const user = await User.findById(req.params.id);
+    let user = await User.findOne({ email }).populate('cars');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    let car = await Car.findOne({ licensePlate });
-    if (!car) car = await Car.create({ brand, model, licensePlate });
+    // Optional: compare password if hashed
+    if (user.password !== password) return res.status(401).json({ message: 'Incorrect password' });
 
-    if (!user.cars.includes(car._id)) {
-      user.cars.push(car._id);
-      await user.save();
-    }
-
-    res.json(car);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error adding car', error });
+    res.json({ userId: user._id, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error logging in', error: err });
   }
 });
 
-// ✅ GET all users
+// ✅ GET all users (with cars)
 router.get('/', async (req, res) => {
   try {
     const users = await User.find().populate('cars');
     res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching users', error });
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching users', error: err });
   }
 });
 
+// ✅ GET user by ID (with cars)
+router.get('/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('cars');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching user', error: err });
+  }
+});
 
-// ✅ PUT: Update an existing user
+// ✅ UPDATE user
 router.put('/:id', async (req, res) => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (updatedUser) {
-      res.json(updatedUser);
-    } else {
-      res.status(404).json({ user: 'User not found' });
-    }
-  } catch (error) {
-    res.status(400).json({ user: 'Error updating user', error });
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).populate('cars');
+    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(400).json({ message: 'Error updating user', error: err });
   }
 });
 
-// ✅ DELETE: Remove a user by ID
+// ✅ DELETE user
 router.delete('/:id', async (req, res) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
-    if (deletedUser) {
-      res.json({ user: 'User deleted successfully!' });
-    } else {
-      res.status(404).json({ user: 'User not found' });
-    }
-  } catch (error) {
-    res.status(500).json({ user: 'Error deleting user', error });
+    if (!deletedUser) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting user', error: err });
   }
 });
 
