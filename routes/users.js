@@ -123,3 +123,5 @@ router.post('/:id/cars', async (req, res) => {
     res.status(500).json({ message: 'Error adding car', error: err.message || err }); // ← Send error message
   }
 });
+
+export default router;
