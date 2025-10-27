@@ -96,7 +96,14 @@ router.post('/:id/cars', async (req, res) => {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const newCar = new Car({ brand, model, licensePlate, color });
+    // ✅ Add the user field!
+    const newCar = new Car({ 
+      brand, 
+      model, 
+      licensePlate, 
+      color,
+      user: id  // <-- This was missing!
+    });
     await newCar.save();
 
     user.cars.push(newCar._id);
