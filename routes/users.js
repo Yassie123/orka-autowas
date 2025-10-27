@@ -1,5 +1,7 @@
 import express from 'express';
 import User from '../models/user.js';
+import Car from '../models/car.js'; // <-- add this
+
 
 const router = express.Router();
 
