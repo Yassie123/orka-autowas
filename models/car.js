@@ -7,6 +7,8 @@ const carSchema = new mongoose.Schema({
   color: { type: String }, // optional, since you mentioned a color field
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // link to user
   createdAt: { type: Date, default: Date.now },
+  cars: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Car' }], // ← this is required
+
 });
 
 const Car = mongoose.model('Car', carSchema);
