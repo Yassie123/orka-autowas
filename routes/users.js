@@ -87,6 +87,22 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: 'Error deleting user', error: err });
   }
 });
+
+// GET all cars for a specific user
+router.get('/:id/cars', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id).populate('cars');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ cars: user.cars });
+  } catch (err) {
+    console.error('Error fetching cars:', err);
+    res.status(500).json({ message: 'Error fetching cars', error: err.message });
+  }
+});
+
 router.post('/:id/cars', async (req, res) => {
   try {
     const { id } = req.params;
