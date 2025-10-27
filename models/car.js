@@ -4,11 +4,10 @@ const carSchema = new mongoose.Schema({
   brand: { type: String, required: true },
   model: { type: String, required: true },
   licensePlate: { type: String, required: true, unique: true },
-  color: { type: String }, // optional, since you mentioned a color field
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // link to user
+  color: { type: String },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
-  cars: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Car' }], // ← this is required
-
+  // Remove the cars array - it doesn't belong here!
 });
 
 const Car = mongoose.model('Car', carSchema);
