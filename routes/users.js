@@ -85,22 +85,27 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ message: 'Error deleting user', error: err });
   }
 });
-
+// users.js
 router.post('/:id/cars', async (req, res) => {
   try {
-    const { brand, model, color, licensePlate } = req.body;
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
+    const { brand, model, licensePlate, color } = req.body;
+
+    const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const car = { brand, model, color, licensePlate };
-    user.cars.push(car); // or save as subdocument
+    const newCar = new Car({ brand, model, licensePlate, color });
+    await newCar.save();
+
+    user.cars.push(newCar._id);
     await user.save();
 
-    res.status(201).json({ message: 'Car added', car });
+    res.status(201).json(newCar);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error adding car', error: err });
   }
 });
+
 
 export default router;
