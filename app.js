@@ -5,6 +5,7 @@ import indexRouter from './routes/index.js';
 import messagesRouter from './routes/messages.js'; // 👈 import messages router
 import mongoose from 'mongoose';
 import usersRoute from './routes/users.js';
+import carsRoute from './routes/cars.js';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/', indexRouter);
 app.use('/api/test', testRouter);
 app.use('/api/messages', messagesRouter); // 👈 mount messages router
 app.use('/api/users', usersRoute);
+app.use('/api/cars', carsRoute);
 
 
 
