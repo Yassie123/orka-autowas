@@ -1,7 +1,7 @@
 import express from 'express';
-import Car from '../models/cars.js';
+import Car from '../models/car.js';
 import Wash from '../models/wash.js';
-import User from '../models/user.js'; // ← Add this import!
+import User from '../models/user.js';
 
 const router = express.Router();
 
@@ -32,19 +32,24 @@ router.get('/:carId/washes', async (req, res) => {
 router.post('/:carId/washes', async (req, res) => {
   try {
     const { carId } = req.params;
-    const { type, notes, cost, location, date } = req.body;
+    const { duration, cost, programs, notes, location } = req.body;
+
+    console.log('📝 Received wash data:', { duration, cost, programs });
 
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found' });
 
     const newWash = new Wash({
       car: carId,
-      type,
+      duration: duration || 0,
+      cost: cost || 0,
+      programs: programs || [],
       notes,
-      cost,
       location,
-      date: date || new Date(),
+      date: new Date(),
     });
+
+    console.log('💾 Saving wash:', newWash);
 
     await newWash.save();
     res.status(201).json(newWash);
@@ -63,6 +68,21 @@ router.get('/washes/:washId', async (req, res) => {
   } catch (err) {
     console.error('Error fetching wash:', err);
     res.status(500).json({ message: 'Error fetching wash', error: err.message });
+  }
+});
+
+// DELETE wash by ID - ADD THIS!
+router.delete('/washes/:washId', async (req, res) => {
+  try {
+    const { washId } = req.params;
+    
+    const deletedWash = await Wash.findByIdAndDelete(washId);
+    if (!deletedWash) return res.status(404).json({ message: 'Wash not found' });
+    
+    res.json({ message: 'Wash deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting wash:', err);
+    res.status(500).json({ message: 'Error deleting wash', error: err.message });
   }
 });
 
