@@ -1,5 +1,5 @@
 import express from 'express';
-import Car from '../models/car.js';
+import Car from '../models/cars.js';
 import Wash from '../models/wash.js';
 import User from '../models/user.js';
 
