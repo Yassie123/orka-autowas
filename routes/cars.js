@@ -65,4 +65,29 @@ router.get('/washes/:washId', async (req, res) => {
   }
 });
 
+// DELETE car by ID
+router.delete('/:carId', async (req, res) => {
+  try {
+    const { carId } = req.params;
+    
+    // Delete all washes associated with this car
+    await Wash.deleteMany({ car: carId });
+    
+    // Delete the car
+    const deletedCar = await Car.findByIdAndDelete(carId);
+    if (!deletedCar) return res.status(404).json({ message: 'Car not found' });
+    
+    // Remove car from user's cars array
+    await User.updateOne(
+      { cars: carId },
+      { $pull: { cars: carId } }
+    );
+    
+    res.json({ message: 'Car deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting car:', err);
+    res.status(500).json({ message: 'Error deleting car', error: err.message });
+  }
+});
+
 export default router;
