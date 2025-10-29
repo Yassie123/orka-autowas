@@ -3,9 +3,10 @@ import mongoose from 'mongoose';
 const washSchema = new mongoose.Schema({
   car: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
   date: { type: Date, default: Date.now },
-  type: { type: String, default: 'Regular wash' }, // e.g., "Regular wash", "Deep clean", "Wax", etc.
+  duration: { type: Number, default: 0 }, // in seconds
+  cost: { type: Number, default: 0 }, // coins inserted
+  programs: [{ type: String }], // array of program names clicked
   notes: { type: String },
-  cost: { type: Number },
   location: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
